@@ -243,7 +243,9 @@ document.getElementById('start-btn').addEventListener('click', async () => {
     }
 
     limitType = document.querySelector('input[name="limit-type"]:checked').value;
-    limitValue = parseInt(document.getElementById('limit-value').value) || 60;
+    let inputLimit = parseInt(document.getElementById('limit-value').value) || 300;
+    limitValue = Math.max(30, inputLimit);
+    document.getElementById('limit-value').value = limitValue;
 
     score = 0; errors = 0; time = 0; itemsCompleted = 0; spawnedItemsCount = 0; totalKeystrokes = 0; combo = 0;
     fallingItems = []; activeWordTarget = null; isPaused = false;
