@@ -1,3 +1,6 @@
 .env
+tastaturspiel.sqlite
+
 
 .idea
+.DS_Store

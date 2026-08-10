@@ -37,6 +37,19 @@ lektionenRohdaten.forEach(lektion => {
 // 2. AUTHENTIFIZIERUNG & BACKEND
 // ==========================================
 let currentUser = null;
+let isLoginMode = true;
+
+// Umschalten zwischen Login und Registrieren
+document.getElementById('toggle-auth-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    isLoginMode = !isLoginMode;
+    document.getElementById('auth-title').textContent = isLoginMode ? 'Login' : 'Registrieren';
+    document.getElementById('auth-username').style.display = isLoginMode ? 'none' : 'block';
+    document.getElementById('login-btn').style.display = isLoginMode ? 'block' : 'none';
+    document.getElementById('register-btn').style.display = isLoginMode ? 'none' : 'block';
+    document.getElementById('toggle-auth-link').textContent = isLoginMode ? 'Noch keinen Account? Hier registrieren.' : 'Bereits registriert? Zum Login.';
+    document.getElementById('auth-error').textContent = '';
+});
 
 async function checkAuth() {
     const res = await fetch('backend.php?action=check_auth');
@@ -71,13 +84,42 @@ document.getElementById('register-btn').addEventListener('click', async () => {
     const data = await res.json();
     if (data.success) {
         document.getElementById('auth-error').style.color = 'green';
-        document.getElementById('auth-error').textContent = "Erfolgreich registriert. Bitte einloggen.";
-    } else document.getElementById('auth-error').textContent = data.message;
+        document.getElementById('auth-error').textContent = "Erfolgreich registriert. Bitte jetzt einloggen.";
+        document.getElementById('toggle-auth-link').click(); // Zurück zum Login wechseln
+    } else {
+        document.getElementById('auth-error').style.color = '#d9534f';
+        document.getElementById('auth-error').textContent = data.message;
+    }
 });
 
-document.getElementById('logout-link').addEventListener('click', async () => {
+document.getElementById('logout-link').addEventListener('click', async (e) => {
+    e.preventDefault();
     await fetch('backend.php?action=logout');
     location.reload();
+});
+
+// Username ändern
+const editLink = document.getElementById('edit-username-link');
+const changeBox = document.getElementById('change-username-box');
+editLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    changeBox.style.display = changeBox.style.display === 'none' ? 'block' : 'none';
+});
+
+document.getElementById('save-username-btn').addEventListener('click', async () => {
+    const newName = document.getElementById('new-username-input').value;
+    const res = await fetch('backend.php?action=change_username', {
+        method: 'POST', body: JSON.stringify({ new_username: newName })
+    });
+    const data = await res.json();
+    if (data.success) {
+        currentUser = data.new_username;
+        document.getElementById('current-user').textContent = currentUser;
+        changeBox.style.display = 'none';
+        document.getElementById('new-username-input').value = '';
+    } else {
+        document.getElementById('username-error').textContent = data.message;
+    }
 });
 
 // ==========================================
@@ -102,10 +144,7 @@ let timerInterval, animationFrameId, fallingItems = [], activeWordTarget = null;
 let lastSpawnTime = 0, currentFallSpeed = 2;
 const baseFallSpeed = 2, maxItems = 4;
 
-// Highscore Tracking
-let personalHighscore = 0;
-let globalHighscore = 0;
-let personalBeaten = false;
+let globalHighscoreSPM = 0;
 let globalBeaten = false;
 
 function showNotification(text) {
@@ -119,16 +158,14 @@ document.getElementById('start-btn').addEventListener('click', async () => {
     currentLesson = lessonSelect.value;
     currentMode = document.getElementById('mode-select').value;
 
-    // Lade Highscores für diesen Modus
+    // Lade SPM-Highscores für diesen Modus
     const res = await fetch(`backend.php?action=get_leaderboard&lesson=${currentLesson}&mode=${currentMode}`);
     const leaderboard = await res.json();
-    personalHighscore = 0; globalHighscore = 0;
-    personalBeaten = false; globalBeaten = false;
+    globalHighscoreSPM = 0;
+    globalBeaten = false;
 
     if (leaderboard.length > 0) {
-        globalHighscore = leaderboard[0].score;
-        const myScore = leaderboard.find(s => s.username === currentUser);
-        if (myScore) personalHighscore = myScore.score;
+        globalHighscoreSPM = leaderboard[0].spm;
     }
 
     if (currentMode === 'mehrere') {
@@ -182,20 +219,23 @@ document.getElementById('abort-btn').addEventListener('click', () => {
 
 async function endGame() {
     gameRunning = false; clearInterval(timerInterval); cancelAnimationFrame(animationFrameId);
-    const apm = time > 0 ? Math.round((totalKeystrokes / time) * 60) : 0;
 
-    // Resultat speichern
+    // Berechnung der Werte pro Minute
+    const apm = time > 0 ? Math.round((totalKeystrokes / time) * 60) : 0;
+    const spm = time > 0 ? Math.round((score / time) * 60) : 0;
+
     await fetch('backend.php?action=save_score', {
         method: 'POST',
-        body: JSON.stringify({ lesson: currentLesson, mode: currentMode, score: score, apm: apm, errors: errors })
+        body: JSON.stringify({ lesson: currentLesson, mode: currentMode, score: score, apm: apm, spm: spm, errors: errors, time: time })
     });
 
     document.getElementById('game-ui').style.display = 'none';
     document.getElementById('game-over-screen').style.display = 'flex';
-    document.getElementById('final-score').textContent = `Punkte: ${score}`;
-    document.getElementById('final-errors').textContent = `Fehler: ${errors}`;
-    document.getElementById('final-time').textContent = `Zeit: ${time}s`;
+    document.getElementById('final-score').textContent = `Punkte absolut: ${score}`;
+    document.getElementById('final-spm').textContent = `Punkte pro Minute (SPM): ${spm}`;
     document.getElementById('final-apm').textContent = `Anschläge pro Minute: ${apm}`;
+    document.getElementById('final-errors').textContent = `Fehler: ${errors}`;
+    document.getElementById('final-time').textContent = `Dauer: ${time}s`;
 }
 
 document.getElementById('restart-btn').addEventListener('click', () => {
@@ -218,7 +258,7 @@ function updateUI() {
 
 function triggerError() {
     errors++;
-    combo = 0; // Combo bricht ab
+    combo = 0;
     updateUI();
     document.getElementById('flash-overlay').classList.add('flash');
     setTimeout(() => document.getElementById('flash-overlay').classList.remove('flash'), 150);
@@ -296,20 +336,16 @@ function gameLoop(timestamp) {
     animationFrameId = requestAnimationFrame(gameLoop);
 }
 
-function checkHighscores() {
-    if (personalHighscore > 0 && score > personalHighscore && !personalBeaten) {
-        showNotification("Persönlicher Rekord geknackt!");
-        personalBeaten = true;
-    }
-    if (globalHighscore > 0 && score > globalHighscore && !globalBeaten) {
-        showNotification("Weltrekord geknackt!");
+function checkLiveRecords() {
+    const currentSPM = time > 0 ? Math.round((score / time) * 60) : 0;
+
+    if (globalHighscoreSPM > 0 && currentSPM > globalHighscoreSPM && !globalBeaten && time > 10) {
+        showNotification("Weltrekord-Tempo (SPM)!");
         globalBeaten = true;
     }
 
-    // Combo Benachrichtigungen
     if (combo > 0 && combo % 10 === 0) {
         showNotification(`${combo}er Combo! Weiter so!`);
-        // Zusatzpunkte für Combos
         score += Math.floor(combo / 10);
     }
 }
@@ -358,7 +394,7 @@ window.addEventListener('keydown', (e) => {
                     activeWordTarget.element.remove();
                     fallingItems = fallingItems.filter(item => item !== activeWordTarget);
                     activeWordTarget = null;
-                    score += 5; // Extra Punkte für ganzes Wort
+                    score += 5; // Extra Punkte
                     itemsCompleted++; updateUI(); spawnItem(); checkEndCondition();
                 }
             } else {
@@ -368,7 +404,7 @@ window.addEventListener('keydown', (e) => {
     }
 
     if (!matched) triggerError();
-    else checkHighscores();
+    else checkLiveRecords();
 });
 
 // Ranglisten / Admin Funktionen
@@ -381,7 +417,7 @@ document.getElementById('show-leaderboard-btn').addEventListener('click', async 
     const tbody = document.querySelector('#leaderboard-table tbody');
     tbody.innerHTML = '';
     data.forEach((row, index) => {
-        tbody.innerHTML += `<tr><td>${index + 1}</td><td>${row.username}</td><td>${row.score}</td><td>${row.apm}</td></tr>`;
+        tbody.innerHTML += `<tr><td>${index + 1}</td><td>${row.username}</td><td>${row.spm}</td><td>${row.apm}</td></tr>`;
     });
 
     document.getElementById('start-screen').style.display = 'none';
@@ -405,9 +441,9 @@ document.getElementById('admin-login-btn').addEventListener('click', async () =>
     const res = await fetch('backend.php?action=admin_login', { method: 'POST', body: JSON.stringify({password: pw}) });
     const data = await res.json();
     if (data.success) {
-        let html = '<table style="width:100%; max-width: 800px; color: black; background: white;"><tr><th>User</th><th>Lektion</th><th>Modus</th><th>Score</th><th>APM</th><th>Fehler</th><th>Datum</th></tr>';
-        data.scores.reverse().forEach(s => {
-            html += `<tr><td>${s.username}</td><td>${s.lesson}</td><td>${s.mode}</td><td>${s.score}</td><td>${s.apm}</td><td>${s.errors}</td><td>${s.date}</td></tr>`;
+        let html = '<table style="width:100%; max-width: 900px; color: black; background: white; font-size: 0.9rem;"><tr><th>User</th><th>Lektion</th><th>Modus</th><th>Punkte</th><th>SPM</th><th>APM</th><th>Fehler</th><th>Dauer (s)</th></tr>';
+        data.scores.forEach(s => {
+            html += `<tr><td>${s.username}</td><td>${s.lesson}</td><td>${s.mode}</td><td>${s.score}</td><td>${s.spm}</td><td>${s.apm}</td><td>${s.errors}</td><td>${s.time}</td></tr>`;
         });
         html += '</table>';
         document.getElementById('admin-data').innerHTML = html;

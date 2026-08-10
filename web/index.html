@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tastaturschreiben Lernen</title>
+    <title>TypingNinja</title>
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -12,24 +12,34 @@
 
 <!-- Login / Registrierung -->
 <div id="auth-screen" class="screen">
-    <h1>Login</h1>
+    <h1 id="auth-title">Login</h1>
     <div class="auth-box">
         <input type="email" id="auth-email" placeholder="Email (@schulegl.ch)">
-        <input type="text" id="auth-username" placeholder="Fancy Username (nur bei Reg.)">
+        <input type="text" id="auth-username" placeholder="Fancy Username" style="display: none;">
         <input type="password" id="auth-password" placeholder="Passwort">
+
         <div class="auth-buttons">
             <button id="login-btn">Einloggen</button>
-            <button id="register-btn">Registrieren</button>
+            <button id="register-btn" style="display: none;">Registrieren</button>
         </div>
         <p id="auth-error"></p>
+
+        <a href="#" id="toggle-auth-link" style="margin-top: 15px; color: #4a4a4a;">Noch keinen Account? Hier registrieren.</a>
     </div>
-    <button id="admin-view-btn" class="secondary-btn">Lehrpersonen Login</button>
+    <button id="admin-view-btn" class="secondary-btn" style="margin-top: 40px;">Lehrpersonen Login</button>
 </div>
 
 <!-- Startmenü -->
 <div id="start-screen" class="screen" style="display: none;">
-    <h1>Tastaturschreiben</h1>
-    <p>Eingeloggt als: <strong id="current-user"></strong> <a href="#" id="logout-link">(Logout)</a></p>
+    <h1>TypingNinja</h1>
+
+    <p>Eingeloggt als: <strong id="current-user"></strong> <a href="#" id="edit-username-link">(ändern)</a> | <a href="#" id="logout-link">(Logout)</a></p>
+
+    <div id="change-username-box" style="display: none; margin-bottom: 20px;">
+        <input type="text" id="new-username-input" placeholder="Neuer Username">
+        <button id="save-username-btn" class="secondary-btn">Speichern</button>
+        <p id="username-error" style="color: #d9534f; font-weight: bold;"></p>
+    </div>
 
     <div class="form-group">
         <label for="lesson-select"><strong>Lektion:</strong></label><br>
@@ -92,9 +102,10 @@
     <h2>Spiel beendet!</h2>
     <div class="stats">
         <p id="final-score">Punkte: 0</p>
+        <p id="final-spm" style="font-weight: bold; color: #4CAF50;">Punkte pro Minute (SPM): 0</p>
+        <p id="final-apm">Anschläge pro Minute: 0</p>
         <p id="final-errors">Fehler: 0</p>
-        <p id="final-time">Zeit: 0s</p>
-        <p id="final-apm" style="font-weight: bold; color: #4CAF50;">APM: 0</p>
+        <p id="final-time">Dauer: 0s</p>
     </div>
     <button id="restart-btn">Zurück zum Menü</button>
 </div>
@@ -103,7 +114,7 @@
     <h2>Top 10</h2>
     <table id="leaderboard-table">
         <thead>
-        <tr><th>Rang</th><th>Spieler</th><th>Punkte</th><th>APM</th></tr>
+        <tr><th>Rang</th><th>Spieler</th><th>Punkte/Min</th><th>APM</th></tr>
         </thead>
         <tbody></tbody>
     </table>
@@ -115,7 +126,7 @@
     <input type="password" id="admin-pw" placeholder="Admin Passwort">
     <button id="admin-login-btn">Daten laden</button>
     <button id="admin-close-btn" class="danger-btn">Schliessen</button>
-    <div id="admin-data" style="margin-top: 20px; max-height: 300px; overflow-y: auto;"></div>
+    <div id="admin-data" style="margin-top: 20px; max-height: 400px; overflow-y: auto; width: 90%;"></div>
 </div>
 
 <script src="./script.js"></script>
