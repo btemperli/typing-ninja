@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tastaturschreiben Lernen</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div id="flash-overlay"></div>
+<div id="notification-banner"></div>
+
+<!-- Login / Registrierung -->
+<div id="auth-screen" class="screen">
+    <h1>Login</h1>
+    <div class="auth-box">
+        <input type="email" id="auth-email" placeholder="Email (@schulegl.ch)">
+        <input type="text" id="auth-username" placeholder="Fancy Username (nur bei Reg.)">
+        <input type="password" id="auth-password" placeholder="Passwort">
+        <div class="auth-buttons">
+            <button id="login-btn">Einloggen</button>
+            <button id="register-btn">Registrieren</button>
+        </div>
+        <p id="auth-error"></p>
+    </div>
+    <button id="admin-view-btn" class="secondary-btn">Lehrpersonen Login</button>
+</div>
+
+<!-- Startmenü -->
+<div id="start-screen" class="screen" style="display: none;">
+    <h1>Tastaturschreiben</h1>
+    <p>Eingeloggt als: <strong id="current-user"></strong> <a href="#" id="logout-link">(Logout)</a></p>
+
+    <div class="form-group">
+        <label for="lesson-select"><strong>Lektion:</strong></label><br>
+        <select id="lesson-select"></select>
+    </div>
+
+    <div class="form-group">
+        <label for="mode-select"><strong>Modus:</strong></label><br>
+        <select id="mode-select">
+            <option value="buchstaben">Einzelne Buchstaben</option>
+            <option value="woerter">Ganze Wörter</option>
+            <option value="mehrere">Mehrere Wörter</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label><strong>Endbedingung:</strong></label><br>
+        <div class="radio-group">
+            <input type="radio" id="limit-time" name="limit-type" value="time" checked>
+            <label for="limit-time">Zeit</label>
+            <input type="radio" id="limit-count" name="limit-type" value="count">
+            <label for="limit-count">Anzahl</label>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label id="limit-label" for="limit-value"><strong>Dauer (Sekunden):</strong></label><br>
+        <input type="number" id="limit-value" value="60" min="1">
+    </div>
+
+    <div class="menu-buttons">
+        <button id="start-btn">Spiel starten</button>
+        <button id="show-leaderboard-btn" class="secondary-btn">Rangliste anzeigen</button>
+    </div>
+</div>
+
+<!-- Game UI -->
+<div id="game-ui">
+    <div class="stats-container">
+        <div id="score-display">Punkte: 0</div>
+        <div id="error-display">Fehler: 0</div>
+        <div id="combo-display">Combo: 0</div>
+        <div id="time-display">Zeit: 0s</div>
+    </div>
+    <div class="controls-container">
+        <button id="pause-btn">Pause</button>
+        <button id="abort-btn" class="danger-btn">Abbrechen</button>
+    </div>
+</div>
+
+<div id="game-container"></div>
+
+<!-- Screens (Pause, Game Over, Leaderboard, Admin) -->
+<div id="pause-screen" class="screen" style="display: none;">
+    <h2>Spiel pausiert</h2>
+    <button id="resume-btn">Weiter</button>
+</div>
+
+<div id="game-over-screen" class="screen" style="display: none;">
+    <h2>Spiel beendet!</h2>
+    <div class="stats">
+        <p id="final-score">Punkte: 0</p>
+        <p id="final-errors">Fehler: 0</p>
+        <p id="final-time">Zeit: 0s</p>
+        <p id="final-apm" style="font-weight: bold; color: #4CAF50;">APM: 0</p>
+    </div>
+    <button id="restart-btn">Zurück zum Menü</button>
+</div>
+
+<div id="leaderboard-screen" class="screen" style="display: none;">
+    <h2>Top 10</h2>
+    <table id="leaderboard-table">
+        <thead>
+        <tr><th>Rang</th><th>Spieler</th><th>Punkte</th><th>APM</th></tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <button id="close-leaderboard-btn">Zurück</button>
+</div>
+
+<div id="admin-screen" class="screen" style="display: none;">
+    <h2>Admin Bereich</h2>
+    <input type="password" id="admin-pw" placeholder="Admin Passwort">
+    <button id="admin-login-btn">Daten laden</button>
+    <button id="admin-close-btn" class="danger-btn">Schliessen</button>
+    <div id="admin-data" style="margin-top: 20px; max-height: 300px; overflow-y: auto;"></div>
+</div>
+
+<script src="./script.js"></script>
+</body>
+</html>
