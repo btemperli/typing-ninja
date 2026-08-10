@@ -1,17 +1,4 @@
 <?php
-$lifetime = 60 * 60 * 24 * 30; // 30 Tage
-session_set_cookie_params([
-    'lifetime' => $lifetime,
-    'path' => '/',
-    'secure' => true,
-    'httponly' => true,
-    'samesite' => 'Strict'
-]);
-ini_set('session.gc_maxlifetime', $lifetime);
-session_start();
-
-header('Content-Type: application/json; charset=utf-8');
-
 function loadEnv($path) {
     if (!file_exists($path)) return;
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -26,6 +13,26 @@ function loadEnv($path) {
 
 loadEnv(dirname(__DIR__) . '/.env');
 $admin_password = $_ENV['ADMIN_PASSWORD'];
+$is_local = (isset($_ENV['ENVIRONMENT']) && strtolower($_ENV['ENVIRONMENT']) === 'local');
+
+// Session konfigurieren (30 Tage Lebensdauer)
+$lifetime = 60 * 60 * 24 * 30;
+
+$cookieParams = [
+    'lifetime' => $lifetime,
+    'path' => '/',
+    'httponly' => true,
+    'samesite' => 'Strict'
+];
+
+if (!$is_local) {
+    $cookieParams['secure'] = true;
+}
+
+session_set_cookie_params($cookieParams);
+ini_set('session.gc_maxlifetime', $lifetime);
+session_start();
+header('Content-Type: application/json; charset=utf-8');
 
 try {
     $db_path = dirname(__DIR__) . '/tastaturspiel.sqlite';
