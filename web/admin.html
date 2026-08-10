@@ -68,19 +68,30 @@
 <script>
     let cachedPw = '';
 
-    document.getElementById('admin-login-btn').addEventListener('click', async () => {
+    document.getElementById('admin-login-btn').addEventListener('click', async (e) => {
+        const btn = e.target;
         const pw = document.getElementById('admin-pw').value;
-        const res = await fetch('backend.php?action=admin_login', { method: 'POST', body: JSON.stringify({password: pw}) });
-        const data = await res.json();
 
-        if (data.success) {
-            cachedPw = pw; // Merken fürs Generieren der Links
-            document.getElementById('admin-auth-screen').style.display = 'none';
-            document.getElementById('admin-dashboard').style.display = 'flex';
-            renderScores(data.scores);
-            loadUsers(); // Lädt auch gleich die Benutzer im Hintergrund
-        } else {
-            document.getElementById('admin-error').textContent = 'Falsches Passwort!';
+        btn.classList.add('btn-loading');
+        document.getElementById('admin-error').textContent = '';
+
+        try {
+            const res = await fetch('backend.php?action=admin_login', { method: 'POST', body: JSON.stringify({password: pw}) });
+            const data = await res.json();
+
+            if (data.success) {
+                cachedPw = pw;
+                document.getElementById('admin-auth-screen').style.display = 'none';
+                document.getElementById('admin-dashboard').style.display = 'flex';
+                renderScores(data.scores);
+                loadUsers();
+            } else {
+                document.getElementById('admin-error').textContent = 'Falsches Passwort!';
+            }
+        } catch (err) {
+            document.getElementById('admin-error').textContent = 'Netzwerkfehler.';
+        } finally {
+            btn.classList.remove('btn-loading');
         }
     });
 
@@ -135,7 +146,7 @@
         const data = await res.json();
         if (data.success) {
             // Zeigt ein Prompt-Fenster, aus dem der Lehrer den Link kopieren kann
-            window.prompt('Link für den Schüler kopieren (Ctrl+C / Cmd+C):', data.link);
+            window.prompt('Link für den Schüler kopieren:', data.link);
         } else {
             alert('Fehler beim Erstellen des Links.');
         }

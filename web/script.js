@@ -78,15 +78,31 @@ async function checkAuth() {
 }
 checkAuth();
 
-document.getElementById('login-btn').addEventListener('click', async () => {
+document.getElementById('login-btn').addEventListener('click', async (e) => {
+    const btn = e.target;
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
-    const res = await fetch('backend.php?action=login', {
-        method: 'POST', body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (data.success) checkAuth();
-    else document.getElementById('auth-error').textContent = data.message;
+
+    // Button sperren und Lade-Animation starten
+    btn.classList.add('btn-loading');
+
+    try {
+        const res = await fetch('backend.php?action=login', {
+            method: 'POST', body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            checkAuth();
+        } else {
+            document.getElementById('auth-error').textContent = data.message;
+        }
+    } catch (err) {
+        document.getElementById('auth-error').textContent = "Netzwerkfehler.";
+    } finally {
+        // Lade-Animation stoppen und Button wieder freigeben
+        btn.classList.remove('btn-loading');
+    }
 });
 
 document.getElementById('register-btn').addEventListener('click', async () => {

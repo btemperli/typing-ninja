@@ -1,6 +1,12 @@
 <?php
 $lifetime = 60 * 60 * 24 * 30; // 30 Tage
-session_set_cookie_params($lifetime);
+session_set_cookie_params([
+    'lifetime' => $lifetime,
+    'path' => '/',
+    'secure' => true,
+    'httponly' => true,
+    'samesite' => 'Strict'
+]);
 ini_set('session.gc_maxlifetime', $lifetime);
 session_start();
 
@@ -45,11 +51,9 @@ try {
         date DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
-    // Sicherstellen, dass alle Tabellen auf dem neusten Stand sind
     try { $db->exec("ALTER TABLE scores ADD COLUMN spm INTEGER"); } catch (Exception $e) {}
     try { $db->exec("ALTER TABLE scores ADD COLUMN time INTEGER"); } catch (Exception $e) {}
 
-    // Neue Spalten für Passwort-Reset
     try { $db->exec("ALTER TABLE users ADD COLUMN reset_token TEXT"); } catch (Exception $e) {}
     try { $db->exec("ALTER TABLE users ADD COLUMN reset_expiry TEXT"); } catch (Exception $e) {}
 
@@ -107,6 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user'] = $user['username'];
             echo json_encode(['success' => true, 'username' => $_SESSION['user']]);
         } else {
+            sleep(4);
             echo json_encode(['success' => false, 'message' => 'Falsche Zugangsdaten.']);
         }
         exit;
@@ -146,6 +151,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'save_score') {
         if (!isset($_SESSION['user'])) {
             echo json_encode(['success' => false, 'message' => 'Nicht eingeloggt.']);
+            exit;
+        }
+
+        if ((int)$data['apm'] > 1200 || (int)$data['spm'] > 1200 || (int)$data['score'] < 0) {
+            echo json_encode(['success' => true, 'cheater' => true]);
             exit;
         }
 
@@ -189,11 +199,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // --- LEHRPERSONEN FUNKTIONEN --- //
     if ($action === 'admin_login') {
         if ($data['password'] === $admin_password) {
-            // Scores laden
             $stmt = $db->query("SELECT * FROM scores ORDER BY id DESC LIMIT 500");
             $scores = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo json_encode(['success' => true, 'scores' => $scores]);
         } else {
+            sleep(4);
             echo json_encode(['success' => false, 'message' => 'Falsches Passwort']);
         }
         exit;
