@@ -434,7 +434,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 // ==========================================
-// 4. ADMIN & RANGLISTEN VIEWS (Dynamisch)
+// 4. RANGLISTEN VIEWS (Dynamisch)
 // ==========================================
 
 async function loadLeaderboard() {
@@ -500,33 +500,4 @@ document.getElementById('menu-leaderboard').addEventListener('click', (e) => {
 document.getElementById('close-leaderboard-btn').addEventListener('click', () => {
     document.getElementById('leaderboard-screen').style.display = 'none';
     document.getElementById('start-screen').style.display = 'flex';
-});
-
-document.getElementById('menu-admin').addEventListener('click', (e) => {
-    e.preventDefault();
-    toggleMenu();
-    document.getElementById('start-screen').style.display = 'none';
-    document.getElementById('admin-screen').style.display = 'flex';
-});
-
-document.getElementById('admin-close-btn').addEventListener('click', () => {
-    document.getElementById('admin-screen').style.display = 'none';
-    document.getElementById('start-screen').style.display = 'flex';
-    mainHeader.style.display = 'flex';
-});
-
-document.getElementById('admin-login-btn').addEventListener('click', async () => {
-    const pw = document.getElementById('admin-pw').value;
-    const res = await fetch('backend.php?action=admin_login', { method: 'POST', body: JSON.stringify({password: pw}) });
-    const data = await res.json();
-    if (data.success) {
-        let html = '<table class="modern-table" style="font-size: 0.9rem;"><tr><th>User</th><th>Lektion</th><th>Modus</th><th>Punkte</th><th>SPM</th><th>APM</th><th>Fehler</th><th>Dauer (s)</th></tr>';
-        data.scores.forEach(s => {
-            html += `<tr><td>${s.username}</td><td>${s.lesson}</td><td>${s.mode}</td><td>${s.score}</td><td>${s.spm}</td><td>${s.apm}</td><td>${s.errors}</td><td>${s.time}</td></tr>`;
-        });
-        html += '</table>';
-        document.getElementById('admin-data').innerHTML = html;
-    } else {
-        alert("Falsches Passwort!");
-    }
 });

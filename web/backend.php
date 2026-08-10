@@ -1,13 +1,11 @@
 <?php
-// 1. Session so konfigurieren, dass sie 30 Tage hält
-$lifetime = 60 * 60 * 24 * 30;
+$lifetime = 60 * 60 * 24 * 30; // 30 Tage
 session_set_cookie_params($lifetime);
 ini_set('session.gc_maxlifetime', $lifetime);
 session_start();
 
 header('Content-Type: application/json; charset=utf-8');
 
-// 2. Funktion zum Laden der .env Datei
 function loadEnv($path) {
     if (!file_exists($path)) return;
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -23,7 +21,6 @@ function loadEnv($path) {
 loadEnv(dirname(__DIR__) . '/.env');
 $admin_password = $_ENV['ADMIN_PASSWORD'];
 
-// 3. SQLite Datenbank initialisieren
 try {
     $db_path = dirname(__DIR__) . '/tastaturspiel.sqlite';
     $db = new PDO('sqlite:' . $db_path);
@@ -48,8 +45,13 @@ try {
         date DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
+    // Sicherstellen, dass alle Tabellen auf dem neusten Stand sind
     try { $db->exec("ALTER TABLE scores ADD COLUMN spm INTEGER"); } catch (Exception $e) {}
     try { $db->exec("ALTER TABLE scores ADD COLUMN time INTEGER"); } catch (Exception $e) {}
+
+    // Neue Spalten für Passwort-Reset
+    try { $db->exec("ALTER TABLE users ADD COLUMN reset_token TEXT"); } catch (Exception $e) {}
+    try { $db->exec("ALTER TABLE users ADD COLUMN reset_expiry TEXT"); } catch (Exception $e) {}
 
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'message' => 'Datenbankfehler: ' . $e->getMessage()]);
@@ -61,6 +63,7 @@ $action = $_GET['action'] ?? '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
 
+    // --- REGULÄRE USER FUNKTIONEN --- //
     if ($action === 'register') {
         $email = trim(strtolower($data['email']));
         $username = trim($data['username']);
@@ -157,11 +160,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // --- PASSWORT RESET (DURCH SCHÜLER AUF RESET.HTML) --- //
+    if ($action === 'reset_password') {
+        $token = $data['token'] ?? '';
+        $new_pw = $data['new_password'] ?? '';
+
+        if (empty($token) || empty($new_pw)) {
+            echo json_encode(['success' => false, 'message' => 'Fehlende Daten.']);
+            exit;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $stmt = $db->prepare("SELECT email FROM users WHERE reset_token = ? AND reset_expiry > ?");
+        $stmt->execute([$token, $now]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user) {
+            $hashed = password_hash($new_pw, PASSWORD_DEFAULT);
+            $stmt = $db->prepare("UPDATE users SET password = ?, reset_token = NULL, reset_expiry = NULL WHERE email = ?");
+            $stmt->execute([$hashed, $user['email']]);
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Link ist ungültig oder abgelaufen.']);
+        }
+        exit;
+    }
+
+    // --- LEHRPERSONEN FUNKTIONEN --- //
     if ($action === 'admin_login') {
         if ($data['password'] === $admin_password) {
+            // Scores laden
             $stmt = $db->query("SELECT * FROM scores ORDER BY id DESC LIMIT 500");
             $scores = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo json_encode(['success' => true, 'scores' => $scores]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Falsches Passwort']);
+        }
+        exit;
+    }
+
+    if ($action === 'admin_get_users') {
+        if ($data['password'] === $admin_password) {
+            $stmt = $db->query("SELECT email, username FROM users ORDER BY username ASC");
+            echo json_encode(['success' => true, 'users' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+        } else {
+            echo json_encode(['success' => false]);
+        }
+        exit;
+    }
+
+    if ($action === 'admin_generate_reset') {
+        if ($data['password'] === $admin_password) {
+            $email = $data['user_email'];
+            $token = bin2hex(random_bytes(16));
+            $expiry = date('Y-m-d H:i:s', time() + (24 * 60 * 60)); // 24 Stunden gültig
+
+            $stmt = $db->prepare("UPDATE users SET reset_token = ?, reset_expiry = ? WHERE email = ?");
+            $stmt->execute([$token, $expiry, $email]);
+
+            // Link dynamisch generieren
+            $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']);
+            $reset_url = rtrim($base_url, '/') . '/reset.html?token=' . $token;
+
+            echo json_encode(['success' => true, 'link' => $reset_url]);
         } else {
             echo json_encode(['success' => false]);
         }
@@ -170,7 +231,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-
     if ($action === 'check_auth') {
         if (isset($_SESSION['user'])) {
             setcookie(session_name(), session_id(), time() + $lifetime, "/");
@@ -190,9 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     if ($action === 'get_leaderboard') {
         $type = $_GET['type'] ?? 'specific';
-
         if ($type === 'overall') {
-            // Holt das beste absolute Resultat jedes Users über alle Level/Modi hinweg
             $stmt = $db->query("
                 SELECT s1.username, s1.lesson, s1.mode, s1.spm, s1.apm
                 FROM scores s1
@@ -207,10 +265,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             ");
             $leaderboard = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } else {
-            // Holt das beste Resultat jedes Users in einem spezifischen Level/Modus
             $lesson = $_GET['lesson'] ?? '';
             $mode = $_GET['mode'] ?? '';
-
             $stmt = $db->prepare("
                 SELECT username, MAX(spm) as spm, MAX(apm) as apm 
                 FROM scores 
@@ -222,7 +278,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $stmt->execute([$lesson, $mode]);
             $leaderboard = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
-
         echo json_encode($leaderboard);
         exit;
     }
