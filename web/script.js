@@ -39,7 +39,6 @@ lektionenRohdaten.forEach(lektion => {
 let currentUser = null;
 let isLoginMode = true;
 
-// UI Elemente
 const mainHeader = document.getElementById('main-header');
 const sideMenu = document.getElementById('side-menu');
 const menuBackdrop = document.getElementById('menu-backdrop');
@@ -47,7 +46,6 @@ const menuToggleBtn = document.getElementById('menu-toggle-btn');
 const closeMenuBtn = document.getElementById('close-menu-btn');
 const usernameModal = document.getElementById('username-modal');
 
-// Menü Steuerung
 function toggleMenu() {
     sideMenu.classList.toggle('open');
     menuBackdrop.classList.toggle('show');
@@ -56,7 +54,6 @@ menuToggleBtn.addEventListener('click', toggleMenu);
 closeMenuBtn.addEventListener('click', toggleMenu);
 menuBackdrop.addEventListener('click', toggleMenu);
 
-// Login umschalten
 document.getElementById('toggle-auth-link').addEventListener('click', (e) => {
     e.preventDefault();
     isLoginMode = !isLoginMode;
@@ -76,7 +73,7 @@ async function checkAuth() {
         document.getElementById('menu-current-user').textContent = currentUser;
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('start-screen').style.display = 'flex';
-        mainHeader.style.display = 'flex'; // Header nur zeigen wenn eingeloggt
+        mainHeader.style.display = 'flex';
     }
 }
 checkAuth();
@@ -116,18 +113,12 @@ document.getElementById('menu-logout').addEventListener('click', async (e) => {
     location.reload();
 });
 
-// Username ändern
 document.getElementById('menu-change-name').addEventListener('click', (e) => {
-    e.preventDefault();
-    toggleMenu();
-    usernameModal.style.display = 'flex';
+    e.preventDefault(); toggleMenu(); usernameModal.style.display = 'flex';
 });
-
 document.getElementById('cancel-username-btn').addEventListener('click', () => {
-    usernameModal.style.display = 'none';
-    document.getElementById('username-error').textContent = '';
+    usernameModal.style.display = 'none'; document.getElementById('username-error').textContent = '';
 });
-
 document.getElementById('save-username-btn').addEventListener('click', async () => {
     const newName = document.getElementById('new-username-input').value;
     const res = await fetch('backend.php?action=change_username', {
@@ -149,30 +140,25 @@ document.getElementById('save-username-btn').addEventListener('click', async () 
 // 3. SPIELLOGIK
 // ==========================================
 const lessonSelect = document.getElementById('lesson-select');
+const lbLessonSelect = document.getElementById('lb-lesson-select'); // Für die Rangliste
+
 for (const key in lektionenJSON) {
     const opt = document.createElement('option');
     opt.value = key; opt.textContent = lektionenJSON[key].name;
     lessonSelect.appendChild(opt);
+
+    // Befülle auch gleich das Dropdown im Leaderboard
+    const lbOpt = document.createElement('option');
+    lbOpt.value = key; lbOpt.textContent = lektionenJSON[key].name;
+    lbLessonSelect.appendChild(lbOpt);
 }
 
-// Dynamisches Anpassen der Label-Beschriftung
 document.getElementById('limit-time').addEventListener('change', () => {
     document.getElementById('limit-label').textContent = "Dauer (Sekunden)";
 });
 document.getElementById('limit-count').addEventListener('change', () => {
     document.getElementById('limit-label').textContent = "Anzahl Elemente";
 });
-
-// Menü Navigation
-// document.getElementById('menu-leaderboard').addEventListener('click', (e) => {
-//     e.preventDefault(); toggleMenu(); document.getElementById('show-leaderboard-btn').click();
-// });
-document.getElementById('menu-admin').addEventListener('click', (e) => {
-    e.preventDefault(); toggleMenu();
-    document.getElementById('start-screen').style.display = 'none';
-    document.getElementById('admin-screen').style.display = 'flex';
-});
-
 
 let gameRunning = false, isPaused = false;
 let score = 0, errors = 0, time = 0, itemsCompleted = 0, spawnedItemsCount = 0, totalKeystrokes = 0;
@@ -197,8 +183,8 @@ document.getElementById('start-btn').addEventListener('click', async () => {
     currentLesson = lessonSelect.value;
     currentMode = document.getElementById('mode-select').value;
 
-    // Highscores holen
-    const res = await fetch(`backend.php?action=get_leaderboard&lesson=${currentLesson}&mode=${currentMode}`);
+    // Highscores holen für Rekord-Anzeige
+    const res = await fetch(`backend.php?action=get_leaderboard&type=specific&lesson=${currentLesson}&mode=${currentMode}`);
     const leaderboard = await res.json();
     globalHighscoreSPM = 0; globalBeaten = false;
     if (leaderboard.length > 0) globalHighscoreSPM = leaderboard[0].spm;
@@ -222,7 +208,7 @@ document.getElementById('start-btn').addEventListener('click', async () => {
     document.getElementById('start-screen').style.display = 'none';
     document.getElementById('game-over-screen').style.display = 'none';
     document.getElementById('game-ui').style.display = 'flex';
-    mainHeader.style.display = 'none'; // Header ausblenden für freie Sicht beim Spielen
+    mainHeader.style.display = 'none';
 
     gameRunning = true;
     timerInterval = setInterval(() => {
@@ -249,11 +235,8 @@ function togglePauseGame() {
 
 document.getElementById('abort-btn').addEventListener('click', () => {
     gameRunning = false; clearInterval(timerInterval); cancelAnimationFrame(animationFrameId);
-
-    // Neu: Spielfeld sofort leeren
     document.getElementById('game-container').innerHTML = '';
-    fallingItems = [];
-    activeWordTarget = null;
+    fallingItems = []; activeWordTarget = null;
 
     document.getElementById('game-ui').style.display = 'none';
     document.getElementById('start-screen').style.display = 'flex';
@@ -262,11 +245,8 @@ document.getElementById('abort-btn').addEventListener('click', () => {
 
 async function endGame() {
     gameRunning = false; clearInterval(timerInterval); cancelAnimationFrame(animationFrameId);
-
-    // Neu: Spielfeld sofort leeren
     document.getElementById('game-container').innerHTML = '';
-    fallingItems = [];
-    activeWordTarget = null;
+    fallingItems = []; activeWordTarget = null;
 
     const apm = time > 0 ? Math.round((totalKeystrokes / time) * 60) : 0;
     const spm = time > 0 ? Math.round((score / time) * 60) : 0;
@@ -453,21 +433,65 @@ window.addEventListener('keydown', (e) => {
     else checkLiveRecords();
 });
 
-// Admin und Ranglisten Views
-document.getElementById('menu-leaderboard').addEventListener('click', async (e) => {
-    e.preventDefault();
-    toggleMenu(); // Overlay-Menü schliessen
+// ==========================================
+// 4. ADMIN & RANGLISTEN VIEWS (Dynamisch)
+// ==========================================
 
-    const l = lessonSelect.value;
-    const m = document.getElementById('mode-select').value;
-    const res = await fetch(`backend.php?action=get_leaderboard&lesson=${l}&mode=${m}`);
+async function loadLeaderboard() {
+    const type = document.querySelector('input[name="lb-type"]:checked').value;
+    const l = document.getElementById('lb-lesson-select').value;
+    const m = document.getElementById('lb-mode-select').value;
+
+    let url = `backend.php?action=get_leaderboard&type=${type}`;
+    if (type === 'specific') {
+        url += `&lesson=${l}&mode=${m}`;
+        document.getElementById('lb-specific-filters').style.display = 'flex';
+    } else {
+        document.getElementById('lb-specific-filters').style.display = 'none';
+    }
+
+    const res = await fetch(url);
     const data = await res.json();
 
+    const thead = document.querySelector('#leaderboard-table thead');
     const tbody = document.querySelector('#leaderboard-table tbody');
+
+    if (type === 'overall') {
+        thead.innerHTML = '<tr><th>Rang</th><th>Spieler</th><th>Lektion</th><th>Modus</th><th>SPM</th><th>APM</th></tr>';
+    } else {
+        thead.innerHTML = '<tr><th>Rang</th><th>Spieler</th><th>SPM</th><th>APM</th></tr>';
+    }
+
     tbody.innerHTML = '';
     data.forEach((row, index) => {
-        tbody.innerHTML += `<tr><td>${index + 1}</td><td>${row.username}</td><td>${row.spm}</td><td>${row.apm}</td></tr>`;
+        if (type === 'overall') {
+            let modeText = row.mode === 'buchstaben' ? 'Buchstaben' : (row.mode === 'woerter' ? 'Wörter' : 'Sätze');
+            tbody.innerHTML += `<tr><td>${index + 1}</td><td>${row.username}</td><td>${row.lesson}</td><td>${modeText}</td><td>${row.spm}</td><td>${row.apm}</td></tr>`;
+        } else {
+            tbody.innerHTML += `<tr><td>${index + 1}</td><td>${row.username}</td><td>${row.spm}</td><td>${row.apm}</td></tr>`;
+        }
     });
+}
+
+// Event Listeners für die Ranglisten-Filter
+document.querySelectorAll('input[name="lb-type"]').forEach(radio => {
+    radio.addEventListener('change', loadLeaderboard);
+});
+document.getElementById('lb-lesson-select').addEventListener('change', loadLeaderboard);
+document.getElementById('lb-mode-select').addEventListener('change', loadLeaderboard);
+
+document.getElementById('menu-leaderboard').addEventListener('click', (e) => {
+    e.preventDefault();
+    toggleMenu();
+
+    // Setze die Filter im Hintergrund schon mal auf die aktuell gewählten Werte
+    document.getElementById('lb-lesson-select').value = lessonSelect.value;
+    document.getElementById('lb-mode-select').value = document.getElementById('mode-select').value;
+
+    // NEU: Standardmässig Overall anwählen
+    document.getElementById('lb-type-overall').checked = true;
+
+    loadLeaderboard();
 
     document.getElementById('start-screen').style.display = 'none';
     document.getElementById('leaderboard-screen').style.display = 'flex';
@@ -476,6 +500,13 @@ document.getElementById('menu-leaderboard').addEventListener('click', async (e) 
 document.getElementById('close-leaderboard-btn').addEventListener('click', () => {
     document.getElementById('leaderboard-screen').style.display = 'none';
     document.getElementById('start-screen').style.display = 'flex';
+});
+
+document.getElementById('menu-admin').addEventListener('click', (e) => {
+    e.preventDefault();
+    toggleMenu();
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('admin-screen').style.display = 'flex';
 });
 
 document.getElementById('admin-close-btn').addEventListener('click', () => {

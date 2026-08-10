@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<!-- Animierter Hintergrund -->
 <div class="bg-animation"></div>
 
 <div id="flash-overlay"></div>
@@ -35,7 +34,6 @@
         <a href="#" id="menu-logout" class="text-danger">Ausloggen</a>
     </nav>
 </div>
-<!-- Abdimm-Hintergrund für das Menü -->
 <div id="menu-backdrop" class="menu-backdrop"></div>
 
 <!-- Modal für Username ändern -->
@@ -126,7 +124,7 @@
 
 <div id="game-container"></div>
 
-<!-- Screens (Pause, Game Over, Leaderboard, Admin) -->
+<!-- Screens (Pause, Game Over) -->
 <div id="pause-screen" class="screen glass-overlay" style="display: none;">
     <h2 style="color: white; font-size: 3rem;">Spiel pausiert</h2>
     <button id="resume-btn" class="primary-btn">Weiter</button>
@@ -146,13 +144,36 @@
     </div>
 </div>
 
+<!-- NEU: Angepasster Leaderboard-Screen mit Filtern -->
 <div id="leaderboard-screen" class="screen" style="display: none;">
     <div class="glass-panel wide-panel">
         <h2>Top 10 Rangliste</h2>
+
+        <!-- Steuerungsbereich für Rangliste -->
+        <div class="form-group" style="margin-bottom: 20px;">
+            <div class="radio-group" style="margin-bottom: 15px;">
+                <input type="radio" id="lb-type-specific" name="lb-type" value="specific">
+                <label for="lb-type-specific" class="radio-label">Spezifisch</label>
+
+                <input type="radio" id="lb-type-overall" name="lb-type" value="overall" checked>
+                <label for="lb-type-overall" class="radio-label">Overall (Alle)</label>
+            </div>
+
+            <!-- display: none; hinzugefügt, da Overall der Standard ist -->
+            <div id="lb-specific-filters" style="display: none; gap: 10px; flex-wrap: wrap;">
+                <select id="lb-lesson-select" class="modern-input" style="flex: 1; min-width: 200px;"></select>
+                <select id="lb-mode-select" class="modern-input" style="flex: 1; min-width: 200px;">
+                    <option value="buchstaben">Einzelne Buchstaben</option>
+                    <option value="woerter">Ganze Wörter</option>
+                    <option value="mehrere">Mehrere Wörter</option>
+                </select>
+            </div>
+        </div>
+
         <div class="table-responsive">
             <table id="leaderboard-table" class="modern-table">
                 <thead>
-                <tr><th>Rang</th><th>Spieler</th><th>SPM</th><th>APM</th></tr>
+                <!-- Wird via JavaScript befüllt -->
                 </thead>
                 <tbody></tbody>
             </table>
