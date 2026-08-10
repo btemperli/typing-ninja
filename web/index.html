@@ -7,126 +7,170 @@
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
+<!-- Animierter Hintergrund -->
+<div class="bg-animation"></div>
+
 <div id="flash-overlay"></div>
 <div id="notification-banner"></div>
 
+<!-- Globale Kopfzeile -->
+<header id="main-header" style="display: none;">
+    <div class="logo">TypingNinja</div>
+    <button id="menu-toggle-btn" class="icon-btn">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="white"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+    </button>
+</header>
+
+<!-- Overlay Seitenmenü -->
+<div id="side-menu" class="side-menu">
+    <button id="close-menu-btn" class="icon-btn close-btn">✕</button>
+    <div class="menu-user-info">
+        Eingeloggt als:<br><strong id="menu-current-user"></strong>
+    </div>
+    <nav class="menu-links">
+        <a href="#" id="menu-change-name">Username ändern</a>
+        <a href="#" id="menu-leaderboard">Rangliste ansehen</a>
+        <hr>
+        <a href="#" id="menu-admin">Lehrpersonen Login</a>
+        <a href="#" id="menu-logout" class="text-danger">Ausloggen</a>
+    </nav>
+</div>
+<!-- Abdimm-Hintergrund für das Menü -->
+<div id="menu-backdrop" class="menu-backdrop"></div>
+
+<!-- Modal für Username ändern -->
+<div id="username-modal" class="modal">
+    <div class="modal-content glass-panel">
+        <h2>Username anpassen</h2>
+        <input type="text" id="new-username-input" placeholder="Neuer Username" class="modern-input">
+        <p id="username-error" class="error-text"></p>
+        <div class="modal-actions">
+            <button id="save-username-btn" class="primary-btn">Speichern</button>
+            <button id="cancel-username-btn" class="secondary-btn">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
 <!-- Login / Registrierung -->
 <div id="auth-screen" class="screen">
-    <h1 id="auth-title">Login</h1>
-    <div class="auth-box">
-        <input type="email" id="auth-email" placeholder="Email (@schulegl.ch)">
-        <input type="text" id="auth-username" placeholder="Fancy Username" style="display: none;">
-        <input type="password" id="auth-password" placeholder="Passwort">
+    <div class="glass-panel auth-panel">
+        <h1 id="auth-title">Login</h1>
+        <div class="auth-box">
+            <input type="email" id="auth-email" placeholder="Email (@schulegl.ch)" class="modern-input">
+            <input type="text" id="auth-username" placeholder="Fancy Username" class="modern-input" style="display: none;">
+            <input type="password" id="auth-password" placeholder="Passwort" class="modern-input">
 
-        <div class="auth-buttons">
-            <button id="login-btn">Einloggen</button>
-            <button id="register-btn" style="display: none;">Registrieren</button>
+            <div class="auth-buttons">
+                <button id="login-btn" class="primary-btn full-width">Einloggen</button>
+                <button id="register-btn" class="primary-btn full-width" style="display: none;">Registrieren</button>
+            </div>
+            <p id="auth-error" class="error-text"></p>
+
+            <a href="#" id="toggle-auth-link" class="text-link">Noch keinen Account? Hier registrieren.</a>
         </div>
-        <p id="auth-error"></p>
-
-        <a href="#" id="toggle-auth-link" style="margin-top: 15px; color: #4a4a4a;">Noch keinen Account? Hier registrieren.</a>
     </div>
-    <button id="admin-view-btn" class="secondary-btn" style="margin-top: 40px;">Lehrpersonen Login</button>
 </div>
 
 <!-- Startmenü -->
 <div id="start-screen" class="screen" style="display: none;">
-    <h1>TypingNinja</h1>
+    <div class="glass-panel start-panel">
+        <h2>Trainingslager</h2>
 
-    <p>Eingeloggt als: <strong id="current-user"></strong> <a href="#" id="edit-username-link">(ändern)</a> | <a href="#" id="logout-link">(Logout)</a></p>
-
-    <div id="change-username-box" style="display: none; margin-bottom: 20px;">
-        <input type="text" id="new-username-input" placeholder="Neuer Username">
-        <button id="save-username-btn" class="secondary-btn">Speichern</button>
-        <p id="username-error" style="color: #d9534f; font-weight: bold;"></p>
-    </div>
-
-    <div class="form-group">
-        <label for="lesson-select"><strong>Lektion:</strong></label><br>
-        <select id="lesson-select"></select>
-    </div>
-
-    <div class="form-group">
-        <label for="mode-select"><strong>Modus:</strong></label><br>
-        <select id="mode-select">
-            <option value="buchstaben">Einzelne Buchstaben</option>
-            <option value="woerter">Ganze Wörter</option>
-            <option value="mehrere">Mehrere Wörter</option>
-        </select>
-    </div>
-
-    <div class="form-group">
-        <label><strong>Endbedingung:</strong></label><br>
-        <div class="radio-group">
-            <input type="radio" id="limit-time" name="limit-type" value="time" checked>
-            <label for="limit-time">Zeit</label>
-            <input type="radio" id="limit-count" name="limit-type" value="count">
-            <label for="limit-count">Anzahl</label>
+        <div class="form-group">
+            <label for="lesson-select">Lektion wählen</label>
+            <select id="lesson-select" class="modern-input"></select>
         </div>
-    </div>
 
-    <div class="form-group">
-        <label id="limit-label" for="limit-value"><strong>Dauer (Sekunden):</strong></label><br>
-        <input type="number" id="limit-value" value="60" min="1">
-    </div>
+        <div class="form-group">
+            <label for="mode-select">Modus wählen</label>
+            <select id="mode-select" class="modern-input">
+                <option value="buchstaben">Einzelne Buchstaben</option>
+                <option value="woerter">Ganze Wörter</option>
+                <option value="mehrere">Mehrere Wörter</option>
+            </select>
+        </div>
 
-    <div class="menu-buttons">
-        <button id="start-btn">Spiel starten</button>
-        <button id="show-leaderboard-btn" class="secondary-btn">Rangliste anzeigen</button>
+        <div class="form-group">
+            <label>Spielende nach</label>
+            <div class="radio-group">
+                <input type="radio" id="limit-time" name="limit-type" value="time" checked>
+                <label for="limit-time" class="radio-label">Zeit</label>
+
+                <input type="radio" id="limit-count" name="limit-type" value="count">
+                <label for="limit-count" class="radio-label">Anzahl</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label id="limit-label" for="limit-value">Dauer (Sekunden)</label>
+            <input type="number" id="limit-value" value="60" min="1" class="modern-input">
+        </div>
+
+        <button id="start-btn" class="primary-btn pulse-btn full-width" style="margin-top: 20px;">Spiel starten</button>
     </div>
 </div>
 
 <!-- Game UI -->
 <div id="game-ui">
-    <div class="stats-container">
+    <div class="stats-container glass-panel">
         <div id="score-display">Punkte: 0</div>
         <div id="error-display">Fehler: 0</div>
         <div id="combo-display">Combo: 0</div>
         <div id="time-display">Zeit: 0s</div>
     </div>
     <div class="controls-container">
-        <button id="pause-btn">Pause</button>
-        <button id="abort-btn" class="danger-btn">Abbrechen</button>
+        <button id="pause-btn" class="glass-btn">Pause</button>
+        <button id="abort-btn" class="glass-btn danger-btn">Abbrechen</button>
     </div>
 </div>
 
 <div id="game-container"></div>
 
 <!-- Screens (Pause, Game Over, Leaderboard, Admin) -->
-<div id="pause-screen" class="screen" style="display: none;">
-    <h2>Spiel pausiert</h2>
-    <button id="resume-btn">Weiter</button>
+<div id="pause-screen" class="screen glass-overlay" style="display: none;">
+    <h2 style="color: white; font-size: 3rem;">Spiel pausiert</h2>
+    <button id="resume-btn" class="primary-btn">Weiter</button>
 </div>
 
-<div id="game-over-screen" class="screen" style="display: none;">
-    <h2>Spiel beendet!</h2>
-    <div class="stats">
-        <p id="final-score">Punkte: 0</p>
-        <p id="final-spm" style="font-weight: bold; color: #4CAF50;">Punkte pro Minute (SPM): 0</p>
-        <p id="final-apm">Anschläge pro Minute: 0</p>
-        <p id="final-errors">Fehler: 0</p>
-        <p id="final-time">Dauer: 0s</p>
+<div id="game-over-screen" class="screen glass-overlay" style="display: none;">
+    <div class="glass-panel result-panel">
+        <h2>Mission beendet!</h2>
+        <div class="stats">
+            <p id="final-score">Punkte absolut: 0</p>
+            <p id="final-spm" class="highlight-stat">Punkte pro Minute (SPM): 0</p>
+            <p id="final-apm">Anschläge pro Minute: 0</p>
+            <p id="final-errors">Fehler: 0</p>
+            <p id="final-time">Dauer: 0s</p>
+        </div>
+        <button id="restart-btn" class="primary-btn full-width">Zurück zum Menü</button>
     </div>
-    <button id="restart-btn">Zurück zum Menü</button>
 </div>
 
 <div id="leaderboard-screen" class="screen" style="display: none;">
-    <h2>Top 10</h2>
-    <table id="leaderboard-table">
-        <thead>
-        <tr><th>Rang</th><th>Spieler</th><th>Punkte/Min</th><th>APM</th></tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-    <button id="close-leaderboard-btn">Zurück</button>
+    <div class="glass-panel wide-panel">
+        <h2>Top 10 Rangliste</h2>
+        <div class="table-responsive">
+            <table id="leaderboard-table" class="modern-table">
+                <thead>
+                <tr><th>Rang</th><th>Spieler</th><th>SPM</th><th>APM</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <button id="close-leaderboard-btn" class="secondary-btn" style="margin-top: 20px;">Schliessen</button>
+    </div>
 </div>
 
 <div id="admin-screen" class="screen" style="display: none;">
-    <h2>Admin Bereich</h2>
-    <input type="password" id="admin-pw" placeholder="Admin Passwort">
-    <button id="admin-login-btn">Daten laden</button>
-    <button id="admin-close-btn" class="danger-btn">Schliessen</button>
-    <div id="admin-data" style="margin-top: 20px; max-height: 400px; overflow-y: auto; width: 90%;"></div>
+    <div class="glass-panel wide-panel">
+        <h2>Admin Bereich</h2>
+        <input type="password" id="admin-pw" placeholder="Admin Passwort" class="modern-input">
+        <div class="modal-actions" style="justify-content: center; margin-top: 15px;">
+            <button id="admin-login-btn" class="primary-btn">Daten laden</button>
+            <button id="admin-close-btn" class="secondary-btn">Schliessen</button>
+        </div>
+        <div id="admin-data" class="table-responsive" style="margin-top: 20px; max-height: 400px;"></div>
+    </div>
 </div>
 
 <script src="./script.js"></script>

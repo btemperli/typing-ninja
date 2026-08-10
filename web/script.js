@@ -34,12 +34,29 @@ lektionenRohdaten.forEach(lektion => {
 });
 
 // ==========================================
-// 2. AUTHENTIFIZIERUNG & BACKEND
+// 2. AUTHENTIFIZIERUNG & UI STEUERUNG
 // ==========================================
 let currentUser = null;
 let isLoginMode = true;
 
-// Umschalten zwischen Login und Registrieren
+// UI Elemente
+const mainHeader = document.getElementById('main-header');
+const sideMenu = document.getElementById('side-menu');
+const menuBackdrop = document.getElementById('menu-backdrop');
+const menuToggleBtn = document.getElementById('menu-toggle-btn');
+const closeMenuBtn = document.getElementById('close-menu-btn');
+const usernameModal = document.getElementById('username-modal');
+
+// Menü Steuerung
+function toggleMenu() {
+    sideMenu.classList.toggle('open');
+    menuBackdrop.classList.toggle('show');
+}
+menuToggleBtn.addEventListener('click', toggleMenu);
+closeMenuBtn.addEventListener('click', toggleMenu);
+menuBackdrop.addEventListener('click', toggleMenu);
+
+// Login umschalten
 document.getElementById('toggle-auth-link').addEventListener('click', (e) => {
     e.preventDefault();
     isLoginMode = !isLoginMode;
@@ -56,9 +73,10 @@ async function checkAuth() {
     const data = await res.json();
     if (data.logged_in) {
         currentUser = data.username;
-        document.getElementById('current-user').textContent = currentUser;
+        document.getElementById('menu-current-user').textContent = currentUser;
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('start-screen').style.display = 'flex';
+        mainHeader.style.display = 'flex'; // Header nur zeigen wenn eingeloggt
     }
 }
 checkAuth();
@@ -83,27 +101,31 @@ document.getElementById('register-btn').addEventListener('click', async () => {
     });
     const data = await res.json();
     if (data.success) {
-        document.getElementById('auth-error').style.color = 'green';
+        document.getElementById('auth-error').style.color = 'var(--success)';
         document.getElementById('auth-error').textContent = "Erfolgreich registriert. Bitte jetzt einloggen.";
-        document.getElementById('toggle-auth-link').click(); // Zurück zum Login wechseln
+        document.getElementById('toggle-auth-link').click();
     } else {
-        document.getElementById('auth-error').style.color = '#d9534f';
+        document.getElementById('auth-error').style.color = 'var(--danger)';
         document.getElementById('auth-error').textContent = data.message;
     }
 });
 
-document.getElementById('logout-link').addEventListener('click', async (e) => {
+document.getElementById('menu-logout').addEventListener('click', async (e) => {
     e.preventDefault();
     await fetch('backend.php?action=logout');
     location.reload();
 });
 
 // Username ändern
-const editLink = document.getElementById('edit-username-link');
-const changeBox = document.getElementById('change-username-box');
-editLink.addEventListener('click', (e) => {
+document.getElementById('menu-change-name').addEventListener('click', (e) => {
     e.preventDefault();
-    changeBox.style.display = changeBox.style.display === 'none' ? 'block' : 'none';
+    toggleMenu();
+    usernameModal.style.display = 'flex';
+});
+
+document.getElementById('cancel-username-btn').addEventListener('click', () => {
+    usernameModal.style.display = 'none';
+    document.getElementById('username-error').textContent = '';
 });
 
 document.getElementById('save-username-btn').addEventListener('click', async () => {
@@ -114,13 +136,14 @@ document.getElementById('save-username-btn').addEventListener('click', async () 
     const data = await res.json();
     if (data.success) {
         currentUser = data.new_username;
-        document.getElementById('current-user').textContent = currentUser;
-        changeBox.style.display = 'none';
+        document.getElementById('menu-current-user').textContent = currentUser;
+        usernameModal.style.display = 'none';
         document.getElementById('new-username-input').value = '';
     } else {
         document.getElementById('username-error').textContent = data.message;
     }
 });
+
 
 // ==========================================
 // 3. SPIELLOGIK
@@ -132,8 +155,24 @@ for (const key in lektionenJSON) {
     lessonSelect.appendChild(opt);
 }
 
-document.getElementById('limit-time').addEventListener('change', () => document.getElementById('limit-label').innerHTML = "<strong>Dauer (Sekunden):</strong>");
-document.getElementById('limit-count').addEventListener('change', () => document.getElementById('limit-label').innerHTML = "<strong>Anzahl Elemente:</strong>");
+// Dynamisches Anpassen der Label-Beschriftung
+document.getElementById('limit-time').addEventListener('change', () => {
+    document.getElementById('limit-label').textContent = "Dauer (Sekunden)";
+});
+document.getElementById('limit-count').addEventListener('change', () => {
+    document.getElementById('limit-label').textContent = "Anzahl Elemente";
+});
+
+// Menü Navigation
+// document.getElementById('menu-leaderboard').addEventListener('click', (e) => {
+//     e.preventDefault(); toggleMenu(); document.getElementById('show-leaderboard-btn').click();
+// });
+document.getElementById('menu-admin').addEventListener('click', (e) => {
+    e.preventDefault(); toggleMenu();
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('admin-screen').style.display = 'flex';
+});
+
 
 let gameRunning = false, isPaused = false;
 let score = 0, errors = 0, time = 0, itemsCompleted = 0, spawnedItemsCount = 0, totalKeystrokes = 0;
@@ -158,15 +197,11 @@ document.getElementById('start-btn').addEventListener('click', async () => {
     currentLesson = lessonSelect.value;
     currentMode = document.getElementById('mode-select').value;
 
-    // Lade SPM-Highscores für diesen Modus
+    // Highscores holen
     const res = await fetch(`backend.php?action=get_leaderboard&lesson=${currentLesson}&mode=${currentMode}`);
     const leaderboard = await res.json();
-    globalHighscoreSPM = 0;
-    globalBeaten = false;
-
-    if (leaderboard.length > 0) {
-        globalHighscoreSPM = leaderboard[0].spm;
-    }
+    globalHighscoreSPM = 0; globalBeaten = false;
+    if (leaderboard.length > 0) globalHighscoreSPM = leaderboard[0].spm;
 
     if (currentMode === 'mehrere') {
         currentPool = lektionenJSON[currentLesson]['woerter'];
@@ -187,6 +222,7 @@ document.getElementById('start-btn').addEventListener('click', async () => {
     document.getElementById('start-screen').style.display = 'none';
     document.getElementById('game-over-screen').style.display = 'none';
     document.getElementById('game-ui').style.display = 'flex';
+    mainHeader.style.display = 'none'; // Header ausblenden für freie Sicht beim Spielen
 
     gameRunning = true;
     timerInterval = setInterval(() => {
@@ -196,9 +232,9 @@ document.getElementById('start-btn').addEventListener('click', async () => {
     gameLoop(performance.now());
 });
 
-document.getElementById('pause-btn').addEventListener('click', togglePause);
-document.getElementById('resume-btn').addEventListener('click', togglePause);
-function togglePause() {
+document.getElementById('pause-btn').addEventListener('click', togglePauseGame);
+document.getElementById('resume-btn').addEventListener('click', togglePauseGame);
+function togglePauseGame() {
     if (!gameRunning) return;
     isPaused = !isPaused;
     if (isPaused) {
@@ -213,20 +249,31 @@ function togglePause() {
 
 document.getElementById('abort-btn').addEventListener('click', () => {
     gameRunning = false; clearInterval(timerInterval); cancelAnimationFrame(animationFrameId);
+
+    // Neu: Spielfeld sofort leeren
+    document.getElementById('game-container').innerHTML = '';
+    fallingItems = [];
+    activeWordTarget = null;
+
     document.getElementById('game-ui').style.display = 'none';
     document.getElementById('start-screen').style.display = 'flex';
+    mainHeader.style.display = 'flex';
 });
 
 async function endGame() {
     gameRunning = false; clearInterval(timerInterval); cancelAnimationFrame(animationFrameId);
 
-    // Berechnung der Werte pro Minute
+    // Neu: Spielfeld sofort leeren
+    document.getElementById('game-container').innerHTML = '';
+    fallingItems = [];
+    activeWordTarget = null;
+
     const apm = time > 0 ? Math.round((totalKeystrokes / time) * 60) : 0;
     const spm = time > 0 ? Math.round((score / time) * 60) : 0;
 
     await fetch('backend.php?action=save_score', {
         method: 'POST',
-        body: JSON.stringify({ lesson: currentLesson, mode: currentMode, score: score, apm: apm, spm: spm, errors: errors, time: time })
+        body: JSON.stringify({ lesson: currentLesson, mode: currentMode, score, apm, spm, errors, time })
     });
 
     document.getElementById('game-ui').style.display = 'none';
@@ -241,6 +288,7 @@ async function endGame() {
 document.getElementById('restart-btn').addEventListener('click', () => {
     document.getElementById('game-over-screen').style.display = 'none';
     document.getElementById('start-screen').style.display = 'flex';
+    mainHeader.style.display = 'flex';
 });
 
 function updateUI() {
@@ -257,11 +305,10 @@ function updateUI() {
 }
 
 function triggerError() {
-    errors++;
-    combo = 0;
-    updateUI();
-    document.getElementById('flash-overlay').classList.add('flash');
-    setTimeout(() => document.getElementById('flash-overlay').classList.remove('flash'), 150);
+    errors++; combo = 0; updateUI();
+    const flash = document.getElementById('flash-overlay');
+    flash.classList.add('flash');
+    setTimeout(() => flash.classList.remove('flash'), 150);
 }
 
 function checkEndCondition() {
@@ -343,7 +390,6 @@ function checkLiveRecords() {
         showNotification("Weltrekord-Tempo (SPM)!");
         globalBeaten = true;
     }
-
     if (combo > 0 && combo % 10 === 0) {
         showNotification(`${combo}er Combo! Weiter so!`);
         score += Math.floor(combo / 10);
@@ -352,7 +398,7 @@ function checkLiveRecords() {
 
 window.addEventListener('keydown', (e) => {
     if (!gameRunning) return;
-    if (e.key === 'Escape') { togglePause(); return; }
+    if (e.key === 'Escape') { togglePauseGame(); return; }
     if (isPaused) return;
 
     const ignoredKeys = ["Shift", "Control", "Alt", "Meta", "Tab", "CapsLock", "Backspace", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
@@ -394,7 +440,7 @@ window.addEventListener('keydown', (e) => {
                     activeWordTarget.element.remove();
                     fallingItems = fallingItems.filter(item => item !== activeWordTarget);
                     activeWordTarget = null;
-                    score += 5; // Extra Punkte
+                    score += 5;
                     itemsCompleted++; updateUI(); spawnItem(); checkEndCondition();
                 }
             } else {
@@ -407,8 +453,11 @@ window.addEventListener('keydown', (e) => {
     else checkLiveRecords();
 });
 
-// Ranglisten / Admin Funktionen
-document.getElementById('show-leaderboard-btn').addEventListener('click', async () => {
+// Admin und Ranglisten Views
+document.getElementById('menu-leaderboard').addEventListener('click', async (e) => {
+    e.preventDefault();
+    toggleMenu(); // Overlay-Menü schliessen
+
     const l = lessonSelect.value;
     const m = document.getElementById('mode-select').value;
     const res = await fetch(`backend.php?action=get_leaderboard&lesson=${l}&mode=${m}`);
@@ -423,25 +472,24 @@ document.getElementById('show-leaderboard-btn').addEventListener('click', async 
     document.getElementById('start-screen').style.display = 'none';
     document.getElementById('leaderboard-screen').style.display = 'flex';
 });
+
 document.getElementById('close-leaderboard-btn').addEventListener('click', () => {
     document.getElementById('leaderboard-screen').style.display = 'none';
     document.getElementById('start-screen').style.display = 'flex';
 });
 
-document.getElementById('admin-view-btn').addEventListener('click', () => {
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('admin-screen').style.display = 'flex';
-});
 document.getElementById('admin-close-btn').addEventListener('click', () => {
     document.getElementById('admin-screen').style.display = 'none';
-    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('start-screen').style.display = 'flex';
+    mainHeader.style.display = 'flex';
 });
+
 document.getElementById('admin-login-btn').addEventListener('click', async () => {
     const pw = document.getElementById('admin-pw').value;
     const res = await fetch('backend.php?action=admin_login', { method: 'POST', body: JSON.stringify({password: pw}) });
     const data = await res.json();
     if (data.success) {
-        let html = '<table style="width:100%; max-width: 900px; color: black; background: white; font-size: 0.9rem;"><tr><th>User</th><th>Lektion</th><th>Modus</th><th>Punkte</th><th>SPM</th><th>APM</th><th>Fehler</th><th>Dauer (s)</th></tr>';
+        let html = '<table class="modern-table" style="font-size: 0.9rem;"><tr><th>User</th><th>Lektion</th><th>Modus</th><th>Punkte</th><th>SPM</th><th>APM</th><th>Fehler</th><th>Dauer (s)</th></tr>';
         data.scores.forEach(s => {
             html += `<tr><td>${s.username}</td><td>${s.lesson}</td><td>${s.mode}</td><td>${s.score}</td><td>${s.spm}</td><td>${s.apm}</td><td>${s.errors}</td><td>${s.time}</td></tr>`;
         });
