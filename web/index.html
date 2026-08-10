@@ -13,6 +13,15 @@
     <link rel="manifest" href="/site.webmanifest" />
 
     <link rel="stylesheet" href="./style.css">
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1MCGTY05T7"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-1MCGTY05T7');
+    </script>
 </head>
 <body>
 <div class="bg-animation"></div>
@@ -186,6 +195,11 @@
         </div>
         <button id="close-leaderboard-btn" class="secondary-btn" style="margin-top: 20px;">Schliessen</button>
     </div>
+</div>
+
+<div id="cookie-banner" class="glass-panel cookie-panel">
+    <p>Ja, wir nutzen Cookies. Um zu sehen, wie das Tool genutzt wird.</p>
+    <button id="cookie-ok-btn" class="primary-btn" style="padding: 8px 20px; font-size: 0.9rem; margin-top: 0;">OK</button>
 </div>
 
 <script src="./script.js"></script>

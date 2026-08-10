@@ -33,6 +33,35 @@ lektionenRohdaten.forEach(lektion => {
     };
 });
 
+document.addEventListener('DOMContentLoaded', () => {
+    const cookieBanner = document.getElementById('cookie-banner');
+    const cookieOkBtn = document.getElementById('cookie-ok-btn');
+
+    // Prüfen, ob der Banner schon einmal weggeklickt/ausgeblendet wurde
+    if (!localStorage.getItem('cookie_accepted')) {
+
+        // Timer starten: Nach 20 Sekunden (20000 Millisekunden) automatisch ausblenden
+        const hideTimer = setTimeout(() => {
+            hideBanner();
+        }, 20000);
+
+        // Klick auf den OK-Button
+        cookieOkBtn.addEventListener('click', () => {
+            hideBanner();
+            clearTimeout(hideTimer); // Stoppt den Timer im Hintergrund
+        });
+
+        function hideBanner() {
+            cookieBanner.classList.add('hidden');
+            // Im Browser speichern, damit er nicht bei jedem Neuladen wieder kommt
+            localStorage.setItem('cookie_accepted', 'true');
+        }
+    } else {
+        // Wenn schon akzeptiert, Banner sofort komplett unsichtbar machen
+        cookieBanner.style.display = 'none';
+    }
+});
+
 // ==========================================
 // 2. AUTHENTIFIZIERUNG & UI STEUERUNG
 // ==========================================
@@ -227,6 +256,13 @@ document.getElementById('start-btn').addEventListener('click', async () => {
     mainHeader.style.display = 'none';
 
     gameRunning = true;
+    if (typeof gtag === 'function') {
+        gtag('event', 'game_start', {
+            'lesson': currentLesson,
+            'mode': currentMode
+        });
+    }
+
     timerInterval = setInterval(() => {
         if (!isPaused) { time++; updateUI(); checkEndCondition(); }
     }, 1000);
@@ -279,6 +315,14 @@ async function endGame() {
     document.getElementById('final-apm').textContent = `Anschläge pro Minute: ${apm}`;
     document.getElementById('final-errors').textContent = `Fehler: ${errors}`;
     document.getElementById('final-time').textContent = `Dauer: ${time}s`;
+
+    if (typeof gtag === 'function') {
+        gtag('event', 'game_complete', {
+            'lesson': currentLesson,
+            'mode': currentMode,
+            'spm': spm
+        });
+    }
 }
 
 document.getElementById('restart-btn').addEventListener('click', () => {

@@ -240,3 +240,45 @@ header .logo { font-weight: 800; font-size: 1.2rem; color: #38bdf8; }
     from { transform: rotate(0turn); }
     to { transform: rotate(1turn); }
 }
+
+/* Cookie Banner */
+.cookie-panel {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 500px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    z-index: 2000;
+    padding: 15px 25px;
+    opacity: 1;
+    transition: opacity 0.5s ease, bottom 0.5s ease;
+}
+
+.cookie-panel p {
+    font-size: 0.9rem;
+    text-align: left;
+    margin: 0;
+    color: var(--text-light);
+}
+
+.cookie-panel.hidden {
+    opacity: 0;
+    bottom: -100px;
+    pointer-events: none;
+}
+
+/* Anpassung für kleine Bildschirme */
+@media (max-width: 600px) {
+    .cookie-panel {
+        flex-direction: column;
+        text-align: center;
+    }
+    .cookie-panel p {
+        text-align: center;
+    }
+}
