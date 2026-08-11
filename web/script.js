@@ -347,7 +347,11 @@ function updateUI() {
 }
 
 function triggerError() {
-    errors++; combo = 0; updateUI();
+    errors++;
+    combo = 0;
+    score = Math.max(0, score - 1);
+    updateUI();
+
     const flash = document.getElementById('flash-overlay');
     flash.classList.add('flash');
     setTimeout(() => flash.classList.remove('flash'), 150);
