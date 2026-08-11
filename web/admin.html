@@ -44,8 +44,7 @@
             <div class="table-responsive">
                 <table class="modern-table" style="font-size: 0.9rem;">
                     <thead>
-                    <tr><th>User</th><th>Lektion</th><th>Modus</th><th>Punkte</th><th>SPM</th><th>APM</th><th>Fehler</th><th>Dauer (s)</th></tr>
-                    </thead>
+                    <tr><th>Zeitstempel</th><th>User</th><th>Lektion</th><th>Modus</th><th>Punkte</th><th>SPM</th><th>APM</th><th>Fehler</th><th>Dauer (s)</th><th>Aktion</th></tr>                    </thead>
                     <tbody id="scores-tbody"></tbody>
                 </table>
             </div>
@@ -110,8 +109,40 @@
         const tbody = document.getElementById('scores-tbody');
         tbody.innerHTML = '';
         scores.forEach(s => {
-            tbody.innerHTML += `<tr><td>${s.username}</td><td>${s.lesson}</td><td>${s.mode}</td><td>${s.score}</td><td>${s.spm}</td><td>${s.apm}</td><td>${s.errors}</td><td>${s.time}</td></tr>`;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${s.date}</td><td>${s.username}</td><td>${s.lesson}</td><td>${s.mode}</td><td>${s.score}</td><td>${s.spm}</td><td>${s.apm}</td><td>${s.errors}</td><td>${s.time}</td>`;
+
+            const tdAction = document.createElement('td');
+            const btn = document.createElement('button');
+            btn.className = 'danger-btn';
+            btn.style.padding = '4px 10px';
+            btn.style.fontSize = '0.85rem';
+            btn.textContent = 'Loeschen';
+            btn.onclick = () => deleteScore(s.id, tr);
+
+            tdAction.appendChild(btn);
+            tr.appendChild(tdAction);
+            tbody.appendChild(tr);
         });
+    }
+
+    async function deleteScore(scoreId, rowElement) {
+        if (!confirm('Diesen Eintrag wirklich loeschen?')) return;
+
+        try {
+            const res = await fetch('backend.php?action=admin_delete_score', {
+                method: 'POST',
+                body: JSON.stringify({ password: cachedPw, score_id: scoreId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                rowElement.remove(); // Zeile direkt aus der Tabelle entfernen ohne Neuladen
+            } else {
+                alert('Fehler beim Loeschen: ' + (data.message || 'Unbekannt'));
+            }
+        } catch (err) {
+            alert('Netzwerkfehler.');
+        }
     }
 
     async function loadUsers() {

@@ -245,6 +245,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         exit;
     }
+
+    if ($action === 'admin_delete_score') {
+        if ($data['password'] === $admin_password) {
+            $score_id = (int)($data['score_id'] ?? 0);
+            if ($score_id > 0) {
+                $stmt = $db->prepare("DELETE FROM scores WHERE id = ?");
+                $stmt->execute([$score_id]);
+                echo json_encode(['success' => true]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Ungueltige ID']);
+            }
+        } else {
+            sleep(2);
+            echo json_encode(['success' => false, 'message' => 'Falsches Passwort']);
+        }
+        exit;
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
