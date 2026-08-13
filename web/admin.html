@@ -111,7 +111,9 @@
         tbody.innerHTML = '';
         scores.forEach(s => {
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${s.date}</td><td>${s.username}</td><td>${s.lesson}</td><td>${s.mode}</td><td>${s.score}</td><td>${s.spm}</td><td>${s.apm}</td><td>${s.errors}</td><td>${s.time}</td>`;
+            const emailDisplay = s.email ? s.email : '-';
+
+            tr.innerHTML = `<td>${s.date}</td><td>${s.username}</td><td>${emailDisplay}</td><td>${s.lesson}</td><td>${s.mode}</td><td>${s.score}</td><td>${s.spm}</td><td>${s.apm}</td><td>${s.errors}</td><td>${s.time}</td>`;
 
             const tdAction = document.createElement('td');
             const btn = document.createElement('button');
