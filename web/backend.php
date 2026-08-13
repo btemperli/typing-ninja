@@ -206,7 +206,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // --- LEHRPERSONEN FUNKTIONEN --- //
     if ($action === 'admin_login') {
         if ($data['password'] === $admin_password) {
-            $stmt = $db->query("SELECT * FROM scores ORDER BY id DESC LIMIT 500");
+            $stmt = $db->query("
+                SELECT s.*, u.email 
+                FROM scores s 
+                LEFT JOIN users u ON s.username = u.username 
+                ORDER BY s.id DESC 
+                LIMIT 500
+            ");
             $scores = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo json_encode(['success' => true, 'scores' => $scores]);
         } else {
