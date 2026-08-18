@@ -161,16 +161,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        if ((int)$data['apm'] > 1200 || (int)$data['spm'] > 1200 || (int)$data['score'] < 0) {
+        if ((int)$data['apm'] > 500 || (int)$data['spm'] > 1200 || (int)$data['score'] < 0) {
             echo json_encode(['success' => true, 'cheater' => true]);
             exit;
         }
 
+        $username = $_SESSION['user'];
+        $time_played = (int)$data['time'];
+
+        if ($time_played < 30) {
+            echo json_encode(['success' => true, 'cheater' => true]);
+            exit;
+        }
+
+        $stmt = $db->prepare("SELECT strftime('%s', MAX(date)) as last_time FROM scores WHERE username = ?");
+        $stmt->execute([$username]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($row && $row['last_time']) {
+            $last_time = (int)$row['last_time'];
+            $now = time(); // Aktuelle Serverzeit
+            $diff_seconds = $now - $last_time;
+
+            if ($diff_seconds < ($time_played - 3)) {
+                echo json_encode(['success' => true, 'cheater' => true]);
+                exit;
+            }
+        }
+
         $stmt = $db->prepare("INSERT INTO scores (username, lesson, mode, score, apm, spm, errors, time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
-            $_SESSION['user'], $data['lesson'], $data['mode'],
-            (int)$data['score'], (int)$data['apm'], (int)$data['spm'],
-            (int)$data['errors'], (int)$data['time']
+            $username,
+            $data['lesson'],
+            $data['mode'],
+            (int)$data['score'],
+            (int)$data['apm'],
+            (int)$data['spm'],
+            (int)$data['errors'],
+            $time_played
         ]);
 
         echo json_encode(['success' => true]);
