@@ -1,5 +1,6 @@
 .env
 tastaturspiel.sqlite
+tastaturspiel_backup.sqlite
 
 # live
 .env.live
